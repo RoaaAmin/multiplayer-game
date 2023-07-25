@@ -1,10 +1,15 @@
+import 'package:adaptive_action_sheet/adaptive_action_sheet.dart';
 import 'package:flame/game.dart';
 import 'package:flame_realtime_shooting/game/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:share/share.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
-import 'game/player.dart';
+import 'package:social_share/social_share.dart'; // Import the 'social_share' package if you haven't already.
+
 
 void main() async {
   await Supabase.initialize(
@@ -29,6 +34,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 
 class GamePage extends StatefulWidget {
   const GamePage({Key? key}) : super(key: key);
@@ -92,12 +98,86 @@ class _GamePageState extends State<GamePage> {
                     await supabase.removeChannel(_gameChannel!);
                     _openLobbyDialog();
                   },
-                  child: const Text('Back to Lobby', style: TextStyle(
-                      color: Colors.green,
-            ),),
+                  child: const Text(
+                    'Back to Lobby',
+                    style: TextStyle(color: Colors.green),
+                  ),
+                ),
+
+                TextButton(
+                  //icon: Icon(Icons.share, color: Colors.green),
+                  child: const Text(
+                    'Share',
+                    style: TextStyle(color: Colors.green),
+                  ),
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (context) {
+                        return Container(
+                          padding: EdgeInsets.symmetric(vertical: 16.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Add sharing options here
+                              ListTile(
+                                leading: Icon(FontAwesomeIcons.whatsapp, color: Colors.green),
+                                title: Text("Share with WhatsApp"),
+                                onTap: () async {
+                                  final shareText = playerWon ? 'I won the Shooting Game!' : 'I lost the Shooting Game!';
+                                  await SocialShare.shareWhatsapp(shareText);
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              ListTile(
+                                leading: Icon(FontAwesomeIcons.telegram, color: Colors.blue[400]),
+                                title: Text("Share with Telegram"),
+                                onTap: () async {
+                                  final shareText = playerWon ? 'I won the Shooting Game!' : 'I lost the Shooting Game!';
+                                  await SocialShare.shareTelegram(shareText);
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              ListTile(
+                                leading: Icon(FontAwesomeIcons.twitter, color: Colors.lightBlueAccent),
+                                title: Text("Share with Twitter"),
+                                onTap: () async {
+                                  final shareText = playerWon ? 'I won the Shooting Game!' : 'I lost the Shooting Game!';
+                                  await SocialShare.shareTwitter(shareText);
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              ListTile(
+                                leading: Icon(FontAwesomeIcons.sms, color: Colors.orange),
+                                title: Text("Share with SMS"),
+                                onTap: () async {
+                                  final shareText = playerWon ? 'I won the UFO Shooting Game!' : 'I lost the UFO Shooting Game!';
+                                  await SocialShare.shareSms(shareText);
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                              ListTile(
+                                leading: Icon(FontAwesomeIcons.textHeight, color: Colors.teal[700]),
+                                title: Text("Copy as text"),
+                                onTap: () async {
+                                  final copyText = playerWon ? 'I won the UFO Shooting Game!' : 'I lost the UFO Shooting Game!';
+                                  await Clipboard.setData(ClipboardData(text: copyText)); // Use Clipboard.setData to copy the text
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
               ],
             );
+
+
+
+
           }),
         );
       },
@@ -170,6 +250,7 @@ class _LobbyDialogState extends State<_LobbyDialog> {
   final myUserId = const Uuid().v4();
 
   late final RealtimeChannel _lobbyChannel;
+
 
   @override
   void initState() {
