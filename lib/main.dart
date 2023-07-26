@@ -1,22 +1,30 @@
-import 'package:adaptive_action_sheet/adaptive_action_sheet.dart';
+import 'dart:async';
+
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flame/game.dart';
 import 'package:flame_realtime_shooting/game/game.dart';
+import 'package:flame_realtime_shooting/person.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:share/share.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:social_share/social_share.dart'; // Import the 'social_share' package if you haven't already.
-
+import 'package:social_share/social_share.dart';
+import 'boxes.dart';
+import 'game/brick.dart'; // Import the 'social_share' package if you haven't already.
 
 void main() async {
   await Supabase.initialize(
     url: 'https://xamfvrmdcjekpzsczrmh.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhbWZ2cm1kY2pla3B6c2N6cm1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTAxNzMwNzIsImV4cCI6MjAwNTc0OTA3Mn0.BSiS_mMcKnonxwqu9FRbXKrDZNMNd-YPnr10-lcYRYc',
+    anonKey:
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhbWZ2cm1kY2pla3B6c2N6cm1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTAxNzMwNzIsImV4cCI6MjAwNTc0OTA3Mn0.BSiS_mMcKnonxwqu9FRbXKrDZNMNd-YPnr10-lcYRYc',
     realtimeClientOptions: const RealtimeClientOptions(eventsPerSecond: 40),
   );
+  Hive.initFlutter();
+  Hive.registerAdapter(PersonAdapter());
+  boxPersons = await Hive.openBox<Person>('personBox');
   runApp(const MyApp());
 }
 
@@ -45,6 +53,16 @@ class GamePage extends StatefulWidget {
 
 class _GamePageState extends State<GamePage> {
   late final MyGame _game;
+  late int num = 0;
+  late String img;
+  bool _playSound = true;
+
+  void sound(String path){
+    final player = AudioPlayer();
+    player.play(UrlSource('assets/audio/blaster-2-81267.mp3'));
+
+  }
+
 
   /// Holds the RealtimeChannel to sync game states
   RealtimeChannel? _gameChannel;
@@ -55,7 +73,11 @@ class _GamePageState extends State<GamePage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset('assets/images/background2.jpeg', fit: BoxFit.cover),
+          Image.asset(
+              boxPersons.length > 5
+                  ? img = 'assets/images/levelUp.jpeg'
+                  : img = 'assets/images/background2.jpeg',
+              fit: BoxFit.cover),
           GameWidget(game: _game),
         ],
       ),
@@ -85,6 +107,14 @@ class _GamePageState extends State<GamePage> {
         } while (response == ChannelResponse.rateLimited && health <= 0);
       },
       onGameOver: (playerWon) async {
+        num++;
+        setState(() {
+          boxPersons.put(
+              'key_$num',
+              Person(
+                score: num,
+              ));
+        });
         await showDialog(
           barrierDismissible: false,
           context: context,
@@ -92,6 +122,14 @@ class _GamePageState extends State<GamePage> {
             return AlertDialog(
               title: Text(playerWon ? 'You Won!' : 'You lost...'),
               actions: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    playerWon
+                        ? const Icon(Icons.sentiment_very_satisfied_outlined)
+                        : const Icon(Icons.sentiment_very_dissatisfied_rounded),
+                  ],
+                ),
                 TextButton(
                   onPressed: () async {
                     Navigator.of(context).pop();
@@ -103,7 +141,6 @@ class _GamePageState extends State<GamePage> {
                     style: TextStyle(color: Colors.green),
                   ),
                 ),
-
                 TextButton(
                   //icon: Icon(Icons.share, color: Colors.green),
                   child: const Text(
@@ -115,53 +152,70 @@ class _GamePageState extends State<GamePage> {
                       context: context,
                       builder: (context) {
                         return Container(
-                          padding: EdgeInsets.symmetric(vertical: 16.0),
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               // Add sharing options here
                               ListTile(
-                                leading: Icon(FontAwesomeIcons.whatsapp, color: Colors.green),
-                                title: Text("Share with WhatsApp"),
+                                leading: const Icon(FontAwesomeIcons.whatsapp,
+                                    color: Colors.green),
+                                title: const Text("Share with WhatsApp"),
                                 onTap: () async {
-                                  final shareText = playerWon ? 'I won the Shooting Game!' : 'I lost the Shooting Game!';
+                                  final shareText = playerWon
+                                      ? 'I won the Shooting Game!'
+                                      : 'I lost the Shooting Game!';
                                   await SocialShare.shareWhatsapp(shareText);
                                   Navigator.of(context).pop();
                                 },
                               ),
                               ListTile(
-                                leading: Icon(FontAwesomeIcons.telegram, color: Colors.blue[400]),
-                                title: Text("Share with Telegram"),
+                                leading: Icon(FontAwesomeIcons.telegram,
+                                    color: Colors.blue[400]),
+                                title: const Text("Share with Telegram"),
                                 onTap: () async {
-                                  final shareText = playerWon ? 'I won the Shooting Game!' : 'I lost the Shooting Game!';
+                                  final shareText = playerWon
+                                      ? 'I won the Shooting Game!'
+                                      : 'I lost the Shooting Game!';
                                   await SocialShare.shareTelegram(shareText);
                                   Navigator.of(context).pop();
                                 },
                               ),
                               ListTile(
-                                leading: Icon(FontAwesomeIcons.twitter, color: Colors.lightBlueAccent),
-                                title: Text("Share with Twitter"),
+                                leading: const Icon(FontAwesomeIcons.twitter,
+                                    color: Colors.lightBlueAccent),
+                                title: const Text("Share with Twitter"),
                                 onTap: () async {
-                                  final shareText = playerWon ? 'I won the Shooting Game!' : 'I lost the Shooting Game!';
+                                  final shareText = playerWon
+                                      ? 'I won the Shooting Game!'
+                                      : 'I lost the Shooting Game!';
                                   await SocialShare.shareTwitter(shareText);
                                   Navigator.of(context).pop();
                                 },
                               ),
                               ListTile(
-                                leading: Icon(FontAwesomeIcons.sms, color: Colors.orange),
-                                title: Text("Share with SMS"),
+                                leading: const Icon(FontAwesomeIcons.sms,
+                                    color: Colors.orange),
+                                title: const Text("Share with SMS"),
                                 onTap: () async {
-                                  final shareText = playerWon ? 'I won the UFO Shooting Game!' : 'I lost the UFO Shooting Game!';
+                                  final shareText = playerWon
+                                      ? 'I won the UFO Shooting Game!'
+                                      : 'I lost the UFO Shooting Game!';
                                   await SocialShare.shareSms(shareText);
                                   Navigator.of(context).pop();
                                 },
                               ),
                               ListTile(
-                                leading: Icon(FontAwesomeIcons.textHeight, color: Colors.teal[700]),
-                                title: Text("Copy as text"),
+                                leading: Icon(FontAwesomeIcons.textHeight,
+                                    color: Colors.teal[700]),
+                                title: const Text("Copy as text"),
                                 onTap: () async {
-                                  final copyText = playerWon ? 'I won the UFO Shooting Game!' : 'I lost the UFO Shooting Game!';
-                                  await Clipboard.setData(ClipboardData(text: copyText)); // Use Clipboard.setData to copy the text
+                                  final copyText = playerWon
+                                      ? 'I won the UFO Shooting Game!'
+                                      : 'I lost the UFO Shooting Game!';
+                                  await Clipboard.setData(ClipboardData(
+                                      text:
+                                      copyText)); // Use Clipboard.setData to copy the text
                                   Navigator.of(context).pop();
                                 },
                               ),
@@ -174,10 +228,6 @@ class _GamePageState extends State<GamePage> {
                 ),
               ],
             );
-
-
-
-
           }),
         );
       },
@@ -191,7 +241,17 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
+// Method to play the sound repeatedly until stopped
+  void _playSoundRepeatedly(String path) {
+    Timer.periodic(Duration(milliseconds: 500), (_) {
+      if (_playSound) {
+        sound(path);
+      }
+    });
+  }
   void _openLobbyDialog() {
+    // Stop the sound when the game is over
+    _playSound = false;
     showDialog(
         context: context,
         barrierDismissible: false,
@@ -204,6 +264,11 @@ class _GamePageState extends State<GamePage> {
               setState(() {});
 
               _game.startNewGame();
+              _playSound = true;
+
+              // Play the sound repeatedly using Timer instead of a while loop
+              _playSoundRepeatedly('assets/audio/blaster-2-81267.mp3');
+
 
               _gameChannel = supabase.channel(gameId,
                   opts: const RealtimeChannelConfig(ack: true));
@@ -251,7 +316,6 @@ class _LobbyDialogState extends State<_LobbyDialog> {
 
   late final RealtimeChannel _lobbyChannel;
 
-
   @override
   void initState() {
     super.initState();
@@ -291,6 +355,8 @@ class _LobbyDialogState extends State<_LobbyDialog> {
 
   @override
   void dispose() {
+    final player = AudioPlayer();
+    player.dispose();
     supabase.removeChannel(_lobbyChannel);
     super.dispose();
   }
@@ -306,6 +372,10 @@ class _LobbyDialogState extends State<_LobbyDialog> {
       )
           : Text('${_userids.length} users waiting'),
       actions: [
+        boxPersons.length > 5
+            ? const Icon(Icons.switch_access_shortcut)
+            : const Icon(Icons.sports_score),
+        Text('the score : ${boxPersons.length} '),
         TextButton(
           onPressed: _userids.length < 2
               ? null
@@ -329,10 +399,12 @@ class _LobbyDialogState extends State<_LobbyDialog> {
               },
             );
           },
-
-          child:  Text('start', style: TextStyle(
-            color: Colors.green,
-          ),),
+          child: const Text(
+            'start',
+            style: TextStyle(
+              color: Colors.green,
+            ),
+          ),
         ),
       ],
     );
