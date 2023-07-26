@@ -1,4 +1,4 @@
-# flame_realtime_shooting
+# multiplayer-game
 
 A new Flutter project.
 

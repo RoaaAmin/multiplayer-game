@@ -27,7 +27,7 @@ class _BrickState extends State<Brick> {
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/images/background2.jpeg'), // Replace 'background2.jpeg' with the path to your background image
+            image: AssetImage('assets/images/levelUp.jpeg'), // Replace 'background2.jpeg' with the path to your background image
             fit: BoxFit.cover,
           ),
         ),
