@@ -73,13 +73,13 @@ class _GamePageState extends State<GamePage> {
         fit: StackFit.expand,
         children: [
           Image.asset(
-            boxPersons.length > 0
+            boxPersons.length > 5
                 ? 'assets/images/levelUp.jpeg'
                 : 'assets/images/background2.jpeg',
             fit: BoxFit.cover,
           ),
           Visibility(
-            visible: boxPersons.length > 0 && _showBrick,
+            visible: boxPersons.length > 5 && _showBrick,
             child: Stack(
               children: [
                 Brick(),
@@ -221,8 +221,8 @@ class _GamePageState extends State<GamePage> {
                                     title: const Text("Share with SMS"),
                                     onTap: () async {
                                       final shareText = playerWon
-                                          ? 'I won the UFO Shooting Game!'
-                                          : 'I lost the UFO Shooting Game!';
+                                          ? 'I won the Shooting Game!'
+                                          : 'I lost the Shooting Game!';
                                       await SocialShare.shareSms(shareText);
                                       Navigator.of(context).pop();
                                     },
@@ -233,8 +233,8 @@ class _GamePageState extends State<GamePage> {
                                     title: const Text("Copy as text"),
                                     onTap: () async {
                                       final copyText = playerWon
-                                          ? 'I won the UFO Shooting Game!'
-                                          : 'I lost the UFO Shooting Game!';
+                                          ? 'I won the Shooting Game!'
+                                          : 'I lost the Shooting Game!';
                                       await Clipboard.setData(ClipboardData(
                                           text:
                                               copyText)); // Use Clipboard.setData to copy the text
