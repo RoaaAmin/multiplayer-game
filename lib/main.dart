@@ -83,6 +83,7 @@ class _GamePageState extends State<GamePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -103,6 +104,7 @@ class _GamePageState extends State<GamePage> {
           GameWidget(game: _game),
         ],
       ),
+
     );
   }
 
