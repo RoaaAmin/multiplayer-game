@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
-import 'package:flame_realtime_shooting/game/bullet.dart';
+import '../game/bullet.dart';
 import 'package:flutter/material.dart';
 
 class Player extends PositionComponent with HasGameRef, CollisionCallbacks {

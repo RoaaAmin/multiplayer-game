@@ -3,8 +3,8 @@ import 'package:flame/game.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/image_composition.dart' as flame_image;
-import 'package:flame_realtime_shooting/game/bullet.dart';
-import 'package:flame_realtime_shooting/game/player.dart';
+import '../game/bullet.dart';
+import '../game/player.dart';
 import 'package:flutter/material.dart';
 
 

@@ -1,9 +1,12 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flame/game.dart';
-import 'package:flame_realtime_shooting/game/game.dart';
-import 'package:flame_realtime_shooting/person.dart';
+import 'package:multiplayer_games_flutter/start_page.dart';
+import '../game/game.dart';
+import '../person.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -11,10 +14,13 @@ import 'package:hive_flutter/adapters.dart';
 import 'package:rive/rive.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
-
 import 'package:social_share/social_share.dart';
 import 'boxes.dart';
 import 'game/brick.dart';
+
+import '../screens/lobby.dart';
+import '../screens/game.dart';
+import '../screens/home.dart';
 
 void main() async {
   await Supabase.initialize(
@@ -26,7 +32,7 @@ void main() async {
   Hive.initFlutter();
   Hive.registerAdapter(PersonAdapter());
   boxPersons = await Hive.openBox<Person>('personBox');
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 final supabase = Supabase.instance.client;
@@ -36,16 +42,24 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'Shooting Game',
+    return MaterialApp(
+      title: 'Games',
       debugShowCheckedModeBanner: false,
-      home: GamePage(),
+      home: StartPage(),
+      routes: {
+        GameScreen.screenRoute: (context) => GameScreen(),
+        LobbyScreen.screenRoute: (context) => LobbyScreen(),
+        GamePage.screenRoute: (context) => GamePage(),
+        HomeScreen.screenRoute: (context) => HomeScreen(),
+      },
     );
   }
 }
 
 class GamePage extends StatefulWidget {
   const GamePage({Key? key}) : super(key: key);
+
+  static String screenRoute = '/game_page';
 
   @override
   State<GamePage> createState() => _GamePageState();
@@ -60,7 +74,7 @@ class _GamePageState extends State<GamePage> {
 
   void sound(String path) {
     final player = AudioPlayer();
-    player.play(UrlSource('assets/audio/blaster-2-81267.mp3'));
+    player.play(UrlSource('assets/sounds/blaster-2-81267.mp3'));
   }
 
   /// Holds the RealtimeChannel to sync game states
@@ -91,6 +105,7 @@ class _GamePageState extends State<GamePage> {
       ),
     );
   }
+
 //
   @override
   void initState() {
@@ -280,45 +295,45 @@ class _GamePageState extends State<GamePage> {
       _playSound = false;
     });
     showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return _LobbyDialog(
-            onGameStarted: (gameId) async {
-              // await a frame to allow subscribing to a new channel in a realtime callback
-              await Future.delayed(Duration.zero);
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return _LobbyDialog(
+          onGameStarted: (gameId) async {
+            // await a frame to allow subscribing to a new channel in a realtime callback
+            await Future.delayed(Duration.zero);
 
-              setState(() {});
+            setState(() {});
 
-              _game.startNewGame();
-              _playSound = true;
+            _game.startNewGame();
+            _playSound = true;
 
-              // Play the sound repeatedly
-              _playSoundRepeatedly('assets/audio/blaster-2-81267.mp3');
+            // Play the sound repeatedly
+            _playSoundRepeatedly('assets/sounds/blaster-2-81267.mp3');
 
-              _gameChannel = supabase.channel(gameId,
-                  opts: const RealtimeChannelConfig(ack: true));
+            _gameChannel = supabase.channel(gameId,
+                opts: const RealtimeChannelConfig(ack: true));
 
-              _gameChannel!.on(RealtimeListenTypes.broadcast,
-                  ChannelFilter(event: 'game_state'), (payload, [_]) {
-                final position =
-                    Vector2(payload['x'] as double, payload['y'] as double);
-                final opponentHealth = payload['health'] as int;
-                _game.updateOpponent(
-                  position: position,
-                  health: opponentHealth,
-                );
+            _gameChannel!.on(RealtimeListenTypes.broadcast,
+                ChannelFilter(event: 'game_state'), (payload, [_]) {
+              final position =
+                  Vector2(payload['x'] as double, payload['y'] as double);
+              final opponentHealth = payload['health'] as int;
+              _game.updateOpponent(
+                position: position,
+                health: opponentHealth,
+              );
 
-                if (opponentHealth <= 0) {
-                  if (!_game.isGameOver) {
-                    _game.isGameOver = true;
-                    _game.onGameOver(true);
-                  }
+              if (opponentHealth <= 0) {
+                if (!_game.isGameOver) {
+                  _game.isGameOver = true;
+                  _game.onGameOver(true);
                 }
-                  }).subscribe();
-            },
-          );
-        },
+              }
+            }).subscribe();
+          },
+        );
+      },
     ).then((_) {
       // The dialog is dismissed, set _showBrick back to true
       setState(() {
@@ -327,6 +342,7 @@ class _GamePageState extends State<GamePage> {
     });
   }
 }
+
 class _LobbyDialog extends StatefulWidget {
   const _LobbyDialog({
     required this.onGameStarted,
