@@ -4,9 +4,13 @@ Real-time multiplayer mini games with Flutter for barmjha internship.
 
 # Mobile app Features
 1- Utilize high-quality audio assets to ensure an immersive sound experience.
+
 2- Enable users to share their results on various social media platforms.
+
 3- Implement a seamless transition from Level 1 to Level 2, based on the player's score achievements.
+
 4- Incorporate animations to enhance the user experience.
+
 5- Add a timer to display the remaining time.
 
 # Preview 
